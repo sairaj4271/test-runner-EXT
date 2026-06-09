@@ -1,0 +1,51 @@
+# ============================================================
+# Deploy Pages — runs on every push to master
+# No token injection needed — proxy approach handles auth
+# ============================================================
+
+name: Deploy Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Copy files to publish/
+        run: |
+          mkdir -p publish
+          rsync -a --exclude='.git' --exclude='publish' . publish/
+          ls -la publish/
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./publish
+          publish_branch: gh-pages
+          keep_files: false
+          exclude_assets: '.github'
+
+      - name: Post deploy summary
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          REPO="${{ github.repository }}"
+          REPO_NAME="${REPO#*/}"
+          echo "## Pages Deployed ✅" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Item | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Trigger UI | [TestRunner.html](https://${OWNER}.github.io/${REPO_NAME}/TestRunner.html) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Reports | [reports.html](https://${OWNER}.github.io/${REPO_NAME}/reports.html) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Token in HTML | ❌ Never — proxy workflow handles auth |" >> "$GITHUB_STEP_SUMMARY"

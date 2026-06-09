@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Test Reports — Ext Web Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0f14; --surface: #161922; --surface2: #1e2230;
+      --border: rgba(255,255,255,.08); --border-hover: rgba(255,255,255,.18);
+      --accent: #4f8ef7; --accent2: #7c3aed; --text: #e8eaf0; --muted: #7b82a0;
+      --success: #22c55e; --error: #f87171; --warn: #fbbf24;
+      --radius: 10px; --radius-lg: 16px;
+    }
+    body { font-family: 'DM Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; padding: 2.5rem 1.5rem 4rem; }
+    body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(79,142,247,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(79,142,247,.04) 1px, transparent 1px); background-size: 32px 32px; pointer-events: none; z-index: 0; }
+    .wrapper { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem; }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 16px; height: 16px; }
+    .logo-text { font-size: 13px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+    .btn-trigger { display: flex; align-items: center; gap: 6px; padding: .55rem 1rem; background: linear-gradient(135deg, var(--accent), var(--accent2)); border: none; border-radius: var(--radius); color: #fff; font-family: inherit; font-size: .8rem; font-weight: 700; letter-spacing: .05em; text-decoration: none; cursor: pointer; text-transform: uppercase; }
+    .refresh-btn { display: flex; align-items: center; gap: 6px; padding: .55rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-family: inherit; font-size: .8rem; font-weight: 700; cursor: pointer; transition: all .15s; text-transform: uppercase; letter-spacing: .05em; }
+    .refresh-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .refresh-btn svg, .btn-trigger svg { width: 14px; height: 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinning { animation: spin .7s linear infinite; }
+    h1 { font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: .4rem; }
+    .subtitle { font-size: .82rem; color: var(--muted); margin-bottom: 2rem; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 2rem; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+    .stat-num { font-size: 1.5rem; font-weight: 700; color: #fff; }
+    .stat-lbl { font-size: .7rem; color: var(--muted); margin-top: 4px; letter-spacing: .06em; text-transform: uppercase; }
+    .filters { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+    .filter-btn { padding: .35rem .9rem; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-family: inherit; font-size: .75rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s; }
+    .filter-btn:hover { border-color: var(--border-hover); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .branch-filter { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: .35rem .75rem; color: var(--text); font-family: inherit; font-size: .75rem; outline: none; cursor: pointer; }
+    .runs { display: flex; flex-direction: column; gap: 10px; }
+    .run-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; transition: border-color .15s; }
+    .run-card:hover { border-color: var(--border-hover); }
+    .run-card.status-pass    { border-left: 3px solid var(--success); }
+    .run-card.status-fail    { border-left: 3px solid var(--error); }
+    .run-card.status-running { border-left: 3px solid var(--warn); }
+    .run-card.status-other   { border-left: 3px solid var(--muted); }
+    .run-meta { display: flex; flex-direction: column; gap: 6px; }
+    .run-title { display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 700; color: #fff; flex-wrap: wrap; }
+    .run-badge { font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+    .badge-pass    { background: rgba(34,197,94,.15);   color: var(--success); }
+    .badge-fail    { background: rgba(248,113,113,.15); color: var(--error); }
+    .badge-running { background: rgba(251,191,36,.15);  color: var(--warn); }
+    .badge-other   { background: rgba(123,130,160,.15); color: var(--muted); }
+    .badge-suite   { background: rgba(79,142,247,.12);  color: var(--accent); font-size: .65rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+    .run-details { display: flex; gap: 16px; font-size: .75rem; color: var(--muted); flex-wrap: wrap; }
+    .run-details span { display: flex; align-items: center; gap: 4px; }
+    .run-details svg { width: 12px; height: 12px; }
+    .run-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+    .btn-view { display: flex; align-items: center; gap: 6px; padding: .5rem .9rem; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: inherit; font-size: .75rem; font-weight: 700; text-decoration: none; transition: all .15s; letter-spacing: .04em; text-transform: uppercase; }
+    .btn-view:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-view svg { width: 13px; height: 13px; }
+    .btn-gh { display: flex; align-items: center; gap: 5px; padding: .35rem .75rem; background: transparent; border: 1px solid var(--border); border-radius: var(--radius); color: var(--muted); font-family: inherit; font-size: .7rem; font-weight: 700; text-decoration: none; transition: all .15s; text-transform: uppercase; letter-spacing: .04em; }
+    .btn-gh:hover { border-color: var(--border-hover); color: var(--text); }
+    .state-msg { text-align: center; padding: 4rem 2rem; color: var(--muted); font-size: .85rem; }
+    .state-msg svg { width: 40px; height: 40px; margin: 0 auto 1rem; display: block; opacity: .3; }
+    .footer { text-align: center; font-size: .72rem; color: var(--muted); margin-top: 3rem; letter-spacing: .05em; }
+    /* Pass rate bar */
+    .pass-bar-wrap { background: var(--surface2); border-radius: 999px; height: 4px; margin-top: 6px; overflow: hidden; }
+    .pass-bar { height: 100%; background: var(--success); border-radius: 999px; transition: width .4s; }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+        </svg>
+      </div>
+      <span class="logo-text">Ext Web Portal</span>
+    </div>
+    <div class="header-actions">
+      <button class="refresh-btn" onclick="loadRuns(true)">
+        <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+        Refresh
+      </button>
+      <a class="btn-trigger" href="TestRunner.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        New run
+      </a>
+    </div>
+  </div>
+
+  <h1>Test Reports</h1>
+  <p class="subtitle" id="page-subtitle">Loading runs from Syslatech_Automation_Framework...</p>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Total runs</div></div>
+    <div class="stat"><div class="stat-num" id="stat-pass" style="color:var(--success)">—</div><div class="stat-lbl">Passed</div></div>
+    <div class="stat"><div class="stat-num" id="stat-fail" style="color:var(--error)">—</div><div class="stat-lbl">Failed</div></div>
+    <div class="stat">
+      <div class="stat-num" id="stat-rate">—</div>
+      <div class="stat-lbl">Pass rate</div>
+      <div class="pass-bar-wrap"><div class="pass-bar" id="pass-bar" style="width:0%"></div></div>
+    </div>
+    <div class="stat"><div class="stat-num" id="stat-branch">—</div><div class="stat-lbl">Branches</div></div>
+  </div>
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('pass', this)">✓ Passed</button>
+    <button class="filter-btn" onclick="setFilter('fail', this)">✗ Failed</button>
+    <button class="filter-btn" onclick="setFilter('running', this)">● Running</button>
+    <select class="branch-filter" id="branch-filter" onchange="renderRuns()">
+      <option value="">All branches</option>
+    </select>
+  </div>
+
+  <div id="run-list" class="runs">
+    <div class="state-msg">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>Loading...
+    </div>
+  </div>
+
+  <div class="footer">Ext Web Portal · Syslatech_Automation_Framework Actions · Reports via GitHub Pages</div>
+</div>
+
+<script>
+  // ════════════════════════════════════════════════════════
+  const TOKEN    = '__TRIGGER_PAT__';
+  const OWNER    = 'Syslatech';
+  const REPO     = 'Syslatech_Automation_Framework';
+  const WORKFLOW = 'playwright2.yml';
+  const PAGES_BASE = 'https://sairaj4271.github.io/test-runner-EXT';
+  // ════════════════════════════════════════════════════════
+
+  let allRuns = [];
+  let currentFilter = 'all';
+
+  function ghHeaders() {
+    const h = { 'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' };
+    if (TOKEN && TOKEN.length >= 20) h['Authorization'] = 'Bearer ' + TOKEN;
+    return h;
+  }
+
+  function timeAgo(d) {
+    const s = Math.floor((Date.now() - new Date(d)) / 1000);
+    if (s < 60) return s + 's ago';
+    if (s < 3600) return Math.floor(s/60) + 'm ago';
+    if (s < 86400) return Math.floor(s/3600) + 'h ago';
+    return Math.floor(s/86400) + 'd ago';
+  }
+
+  function duration(a, b) {
+    if (!a) return '—';
+    const s = Math.floor((new Date(b) - new Date(a)) / 1000);
+    if (s < 60) return s + 's';
+    return Math.floor(s/60) + 'm ' + (s%60) + 's';
+  }
+
+  function getStatus(run) {
+    if (run.status === 'in_progress' || run.status === 'queued') return 'running';
+    if (run.conclusion === 'success') return 'pass';
+    if (run.conclusion === 'failure' || run.conclusion === 'timed_out') return 'fail';
+    return 'other';
+  }
+
+  function getBranch(run) {
+    return run.inputs?.branch || run.head_branch || 'master';
+  }
+
+  function getSuite(run) {
+    return run.inputs?.test_suite || 'all';
+  }
+
+  async function loadRuns(manual) {
+    const icon = document.getElementById('refresh-icon');
+    icon.classList.add('spinning');
+    try {
+      const res = await fetch(
+        'https://api.github.com/repos/' + OWNER + '/' + REPO +
+        '/actions/workflows/' + WORKFLOW + '/runs?per_page=30',
+        { headers: ghHeaders() }
+      );
+      if (!res.ok) throw new Error('GitHub API ' + res.status);
+      const data = await res.json();
+      allRuns = data.workflow_runs || [];
+      renderRuns();
+      updateStats();
+      updateBranchFilter();
+      document.getElementById('page-subtitle').textContent =
+        allRuns.length + ' run' + (allRuns.length !== 1 ? 's' : '') +
+        ' · Last refreshed ' + new Date().toLocaleTimeString();
+    } catch (err) {
+      document.getElementById('run-list').innerHTML =
+        '<div class="state-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>' +
+        'Could not load runs.<br><small style="opacity:.6">' + err.message + '</small></div>';
+    } finally {
+      icon.classList.remove('spinning');
+    }
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderRuns();
+  }
+
+  function updateBranchFilter() {
+    const sel = document.getElementById('branch-filter');
+    const current = sel.value;
+    const branches = [...new Set(allRuns.map(getBranch))];
+    sel.innerHTML = '<option value="">All branches</option>';
+    branches.forEach(function(b) {
+      const opt = document.createElement('option');
+      opt.value = b; opt.textContent = b;
+      if (b === current) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function renderRuns() {
+    const branchFilter = document.getElementById('branch-filter').value;
+    const filtered = allRuns.filter(function(run) {
+      const s = getStatus(run);
+      const b = getBranch(run);
+      if (branchFilter && b !== branchFilter) return false;
+      if (currentFilter === 'all') return true;
+      return s === currentFilter;
+    });
+
+    if (filtered.length === 0) {
+      document.getElementById('run-list').innerHTML =
+        '<div class="state-msg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>No runs match this filter.</div>';
+      return;
+    }
+
+    const html = filtered.map(function(run) {
+      const status  = getStatus(run);
+      const suite   = getSuite(run);
+      const branch  = getBranch(run);
+      const runNum  = run.run_number;
+      const dur     = duration(run.run_started_at, run.updated_at);
+      const ago     = timeAgo(run.created_at);
+      const reportUrl = PAGES_BASE + '/reports/' + runNum + '/';
+      const badgeLabel = status === 'pass' ? '✓ Passed' : status === 'fail' ? '✗ Failed' : status === 'running' ? '● Running' : run.conclusion || 'Unknown';
+
+      return '<div class="run-card status-' + status + '">' +
+        '<div class="run-meta">' +
+          '<div class="run-title">' +
+            '<span>#' + runNum + '</span>' +
+            '<span class="run-badge badge-' + status + '">' + badgeLabel + '</span>' +
+            '<span class="badge-suite">' + suite + '</span>' +
+          '</div>' +
+          '<div class="run-details">' +
+            '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>' + branch + '</span>' +
+            '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + dur + '</span>' +
+            '<span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' + ago + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="run-actions">' +
+          '<a class="btn-view" href="' + reportUrl + '" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>Report</a>' +
+          '<a class="btn-gh" href="' + run.html_url + '" target="_blank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>Actions</a>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    document.getElementById('run-list').innerHTML = html;
+  }
+
+  function updateStats() {
+    const total  = allRuns.length;
+    const pass   = allRuns.filter(function(r) { return r.conclusion === 'success'; }).length;
+    const fail   = allRuns.filter(function(r) { return r.conclusion === 'failure' || r.conclusion === 'timed_out'; }).length;
+    const completed = allRuns.filter(function(r) { return r.status === 'completed'; }).length;
+    const rate   = completed > 0 ? Math.round((pass / completed) * 100) : 0;
+    const branches = new Set(allRuns.map(getBranch)).size;
+    document.getElementById('stat-total').textContent  = total;
+    document.getElementById('stat-pass').textContent   = pass;
+    document.getElementById('stat-fail').textContent   = fail;
+    document.getElementById('stat-rate').textContent   = rate + '%';
+    document.getElementById('pass-bar').style.width    = rate + '%';
+    document.getElementById('stat-branch').textContent = branches;
+  }
+
+  loadRuns();
+  setInterval(loadRuns, 30000);
+</script>
+</body>
+</html>

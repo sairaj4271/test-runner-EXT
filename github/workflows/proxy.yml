@@ -1,0 +1,82 @@
+# ============================================================
+# Proxy Workflow — test-runner-EXT (public repo)
+# ============================================================
+# Called by TestRunner.html via workflow_dispatch (no PAT needed)
+# Forwards inputs to Syslatech_Automation_Framework via repository_dispatch
+# using TRIGGER_PAT secret (server-side only, never in HTML)
+# ============================================================
+
+name: Proxy — Trigger Automation Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to test'
+        required: false
+        default: 'main'
+      test_suite:
+        description: 'Test suite'
+        required: false
+        default: 'all'
+      retries:
+        description: 'Retry on failure'
+        required: false
+        default: 'on'
+      grep:
+        description: 'TC filter'
+        required: false
+        default: ''
+      spec:
+        description: 'Specific spec file'
+        required: false
+        default: ''
+
+jobs:
+  proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forward to Syslatech_Automation_Framework via repository_dispatch
+        run: |
+          echo "Forwarding to Syslatech_Automation_Framework..."
+          echo "Branch: ${{ github.event.inputs.branch }}"
+          echo "Suite:  ${{ github.event.inputs.test_suite }}"
+
+          HTTP_STATUS=$(curl -s -o /tmp/response.json -w "%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${{ secrets.TRIGGER_PAT }}" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Content-Type: application/json" \
+            "https://api.github.com/repos/Syslatech/Syslatech_Automation_Framework/dispatches" \
+            -d "{
+              \"event_type\": \"playwright\",
+              \"client_payload\": {
+                \"branch\":     \"${{ github.event.inputs.branch }}\",
+                \"test_suite\": \"${{ github.event.inputs.test_suite }}\",
+                \"retries\":    \"${{ github.event.inputs.retries }}\",
+                \"grep\":       \"${{ github.event.inputs.grep }}\",
+                \"spec\":       \"${{ github.event.inputs.spec }}\"
+              }
+            }")
+
+          echo "GitHub API response: $HTTP_STATUS"
+          cat /tmp/response.json
+
+          if [ "$HTTP_STATUS" = "204" ]; then
+            echo "✅ Successfully dispatched to Syslatech_Automation_Framework"
+          else
+            echo "❌ Dispatch failed with status $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Post summary
+        run: |
+          echo "## ✅ Tests Dispatched" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | \`${{ github.event.inputs.branch }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Suite | \`${{ github.event.inputs.test_suite }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Retries | \`${{ github.event.inputs.retries }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Target | [Automation Framework Actions](https://github.com/Syslatech/Syslatech_Automation_Framework/actions) |" >> "$GITHUB_STEP_SUMMARY"
